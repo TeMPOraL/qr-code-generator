@@ -9,11 +9,11 @@
 <body>
     <div class="container">
         <h1>QR Code Generator</h1>
-        
+
         <div class="input-section">
             <label for="content">Content (URL, text, etc.):</label>
             <textarea id="content" placeholder="Enter content for QR code"></textarea>
-            
+
             <details class="advanced-section">
                 <summary>Advanced Options</summary>
                 <div class="advanced-content">
@@ -27,7 +27,7 @@
                 </div>
             </details>
         </div>
-        
+
         <div class="output-section">
             <div id="qrcode-container">
                 <canvas id="qrcode"></canvas>
@@ -35,8 +35,8 @@
             <a id="download" class="download-btn" download="qrcode.png">Download QR Code</a>
         </div>
     </div>
-    
-    <script src="js/qrious.min.js"></script>
+
+    <script src="js/qrious.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
