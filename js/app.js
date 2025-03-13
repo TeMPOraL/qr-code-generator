@@ -24,7 +24,6 @@ document.addEventListener('DOMContentLoaded', function() {
             stub = 'qr-code';
         }
         return `${dateStr}-${stub}.png`;
-        downloadLink.download = generateFilename(qr.value);
     }
     function debounce(func, delay) {
         return function() {
