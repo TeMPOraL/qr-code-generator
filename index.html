@@ -14,15 +14,18 @@
             <label for="content">Content (URL, text, etc.):</label>
             <textarea id="content" placeholder="Enter content for QR code"></textarea>
             
-            <label for="errorCorrection">Error Correction Level:</label>
-            <select id="errorCorrection">
-                <option value="L">Low (7%)</option>
-                <option value="M" selected>Medium (15%)</option>
-                <option value="Q">Quartile (25%)</option>
-                <option value="H">High (30%)</option>
-            </select>
-            
-            <button id="generate">Generate QR Code</button>
+            <details class="advanced-section">
+                <summary>Advanced Options</summary>
+                <div class="advanced-content">
+                    <label for="errorCorrection">Error Correction Level:</label>
+                    <select id="errorCorrection">
+                        <option value="L">Low (7%)</option>
+                        <option value="M" selected>Medium (15%)</option>
+                        <option value="Q">Quartile (25%)</option>
+                        <option value="H">High (30%)</option>
+                    </select>
+                </div>
+            </details>
         </div>
         
         <div class="output-section">

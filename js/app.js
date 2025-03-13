@@ -1,11 +1,19 @@
 document.addEventListener('DOMContentLoaded', function() {
     const contentInput = document.getElementById('content');
     const errorCorrectionSelect = document.getElementById('errorCorrection');
-    const generateButton = document.getElementById('generate');
     const qrcodeCanvas = document.getElementById('qrcode');
     const downloadLink = document.getElementById('download');
     
     let qr = null;
+    let debounceTimer;
+    
+    // Debounce function to delay execution
+    function debounce(func, delay) {
+        return function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(func, delay);
+        };
+    }
     
     // Initialize QR code instance
     function initQRCode() {
@@ -25,7 +33,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const content = contentInput.value.trim();
         
         if (!content) {
-            alert('Please enter content for the QR code');
+            // Hide download link if no content
+            downloadLink.style.display = 'none';
+            // Clear the QR code (optional)
+            qr.value = '';
             return;
         }
         
@@ -45,9 +56,15 @@ document.addEventListener('DOMContentLoaded', function() {
         downloadLink.href = dataURL;
     }
     
+    // Create debounced version of generate function
+    const debouncedGenerate = debounce(generateQRCode, 200);
+    
     // Event listeners
-    generateButton.addEventListener('click', generateQRCode);
+    contentInput.addEventListener('input', debouncedGenerate);
+    errorCorrectionSelect.addEventListener('change', debouncedGenerate);
     
     // Initialize
     initQRCode();
+    // Generate empty QR code on initial load (optional)
+    generateQRCode();
 });
