@@ -73,6 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateDownloadLink() {
         const dataURL = qrcodeCanvas.toDataURL('image/png');
         downloadLink.href = dataURL;
+        downloadLink.download = generateFilename(qr.value);
     }
 
     // Create debounced version of generate function
