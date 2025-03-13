@@ -7,7 +7,25 @@ document.addEventListener('DOMContentLoaded', function() {
     let qr = null;
     let debounceTimer;
 
-    // Debounce function to delay execution
+    // Helper: generate a filename based on today's date and the QR code content.
+    function generateFilename(content) {
+        const date = new Date();
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, '0'); // Month 01..12
+        const dd = String(date.getDate()).padStart(2, '0');
+        const dateStr = `${yyyy}-${mm}-${dd}`;
+
+        // Remove "http://" or "https://", then trim and slice up to 64 characters.
+        let stub = content.trim().replace(/^https?:\/\//i, '').slice(0, 64);
+        // Replace any character that is not alphanumeric, dot, or hyphen with a hyphen.
+        stub = stub.replace(/[^a-zA-Z0-9\-\.]/g, '-');
+
+        if (!stub) {
+            stub = 'qr-code';
+        }
+        return `${dateStr}-${stub}.png`;
+        downloadLink.download = generateFilename(qr.value);
+    }
     function debounce(func, delay) {
         return function() {
             clearTimeout(debounceTimer);
@@ -52,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateDownloadLink();
     }
 
-    // Update download link with current canvas data
+    // Update download link with current canvas data and dynamic filename
     function updateDownloadLink() {
         const dataURL = qrcodeCanvas.toDataURL('image/png');
         downloadLink.href = dataURL;
