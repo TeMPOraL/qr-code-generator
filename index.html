@@ -1,28 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code Generator</title>
+    <title>Generator kodów QR</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <div class="container">
-        <h1>QR Code Generator</h1>
+        <h1>Generator kodów QR</h1>
 
         <div class="input-section">
-            <label for="content">Content (URL, text, etc.):</label>
-            <textarea id="content" placeholder="Enter content for QR code"></textarea>
+            <label for="content">Zawartość (URL, tekst, itp.):</label>
+            <textarea id="content" placeholder="Wprowadź treść dla kodu QR"></textarea>
 
             <details class="advanced-section">
-                <summary>Advanced Options</summary>
+                <summary>Opcje zaawansowane</summary>
                 <div class="advanced-content">
-                    <label for="errorCorrection">Error Correction Level:</label>
+                    <label for="errorCorrection">Poziom korekcji błędów:</label>
                     <select id="errorCorrection">
-                        <option value="L">Low (7%)</option>
-                        <option value="M" selected>Medium (15%)</option>
-                        <option value="Q">Quartile (25%)</option>
-                        <option value="H">High (30%)</option>
+                        <option value="L">Niski (7%)</option>
+                        <option value="M" selected>Średni (15%)</option>
+                        <option value="Q">Kwartyl (25%)</option>
+                        <option value="H">Wysoki (30%)</option>
                     </select>
                 </div>
             </details>
@@ -32,7 +32,7 @@
             <div id="qrcode-container">
                 <canvas id="qrcode"></canvas>
             </div>
-            <a id="download" class="download-btn" download="qrcode.png">Download QR Code</a>
+            <a id="download" class="download-btn" download="qrcode.png">Pobierz kod QR</a>
         </div>
     </div>
 
