@@ -80,6 +80,14 @@ button:hover {
     background-color: white;
     border: 1px solid #ddd;
     border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#qrcode {
+    max-width: 100%;
+    height: auto;
 }
 
 .download-btn {

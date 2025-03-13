@@ -19,12 +19,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function initQRCode() {
         qr = new QRious({
             element: qrcodeCanvas,
-            size: 300,
+            size: 512,
             value: 'N/A',
             level: 'M', // default error correction level
             background: 'white',
             foreground: 'grey',
-            padding: 20 // safety margin
+            padding: 16 // safety margin
         });
     }
 
