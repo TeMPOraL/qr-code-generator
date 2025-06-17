@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const logoUploadInput = document.getElementById('logoUpload');
     const logoPreview = document.getElementById('logoPreview');
     const removeLogoBtn = document.getElementById('removeLogo');
+    const logoInfo = document.getElementById('logoInfo');
 
     let qr = null;
     let debounceTimer;
@@ -54,12 +55,38 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Apply module style (dots, rounded corners)
     function applyModuleStyle(style) {
-        if (style === 'square' || !qr.modules) return;
+        if (style === 'square') return;
 
         const ctx = qrcodeCanvas.getContext('2d');
-        const moduleCount = qr.modules.length;
-        const moduleSize = (qrcodeCanvas.width - qr.padding * 2) / moduleCount;
-        const padding = qr.padding;
+        const imageData = ctx.getImageData(0, 0, qrcodeCanvas.width, qrcodeCanvas.height);
+        const data = imageData.data;
+        
+        // Estimate module size by finding the first black module
+        let moduleSize = 0;
+        let padding = qr.padding || 16;
+        let startX = padding;
+        
+        // Find first black pixel to determine module size
+        for (let x = padding; x < qrcodeCanvas.width - padding; x++) {
+            const idx = (padding * qrcodeCanvas.width + x) * 4;
+            if (data[idx] < 128) { // Found black pixel
+                startX = x;
+                break;
+            }
+        }
+        
+        // Find end of first module
+        for (let x = startX; x < qrcodeCanvas.width - padding; x++) {
+            const idx = (padding * qrcodeCanvas.width + x) * 4;
+            if (data[idx] > 128) { // Found white pixel
+                moduleSize = x - startX;
+                break;
+            }
+        }
+        
+        if (moduleSize === 0) return; // Could not determine module size
+        
+        const moduleCount = Math.floor((qrcodeCanvas.width - padding * 2) / moduleSize);
 
         // Clear canvas and redraw with new style
         ctx.clearRect(0, 0, qrcodeCanvas.width, qrcodeCanvas.height);
@@ -71,18 +98,24 @@ document.addEventListener('DOMContentLoaded', function() {
         // Set foreground color
         ctx.fillStyle = qr.foreground;
 
+        // Scan the original image data to find modules
         for (let row = 0; row < moduleCount; row++) {
             for (let col = 0; col < moduleCount; col++) {
-                if (qr.modules[row][col]) {
-                    const x = padding + col * moduleSize;
-                    const y = padding + row * moduleSize;
+                const x = padding + col * moduleSize + moduleSize / 2;
+                const y = padding + row * moduleSize + moduleSize / 2;
+                const idx = (Math.floor(y) * qrcodeCanvas.width + Math.floor(x)) * 4;
+                
+                // Check if this module is dark
+                if (data[idx] < 128) {
+                    const moduleX = padding + col * moduleSize;
+                    const moduleY = padding + row * moduleSize;
 
                     if (style === 'dots') {
                         // Draw circles
                         ctx.beginPath();
                         ctx.arc(
-                            x + moduleSize / 2,
-                            y + moduleSize / 2,
+                            moduleX + moduleSize / 2,
+                            moduleY + moduleSize / 2,
                             moduleSize * 0.4,
                             0,
                             2 * Math.PI
@@ -92,15 +125,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Draw rounded rectangles
                         const radius = moduleSize * 0.2;
                         ctx.beginPath();
-                        ctx.moveTo(x + radius, y);
-                        ctx.lineTo(x + moduleSize - radius, y);
-                        ctx.quadraticCurveTo(x + moduleSize, y, x + moduleSize, y + radius);
-                        ctx.lineTo(x + moduleSize, y + moduleSize - radius);
-                        ctx.quadraticCurveTo(x + moduleSize, y + moduleSize, x + moduleSize - radius, y + moduleSize);
-                        ctx.lineTo(x + radius, y + moduleSize);
-                        ctx.quadraticCurveTo(x, y + moduleSize, x, y + moduleSize - radius);
-                        ctx.lineTo(x, y + radius);
-                        ctx.quadraticCurveTo(x, y, x + radius, y);
+                        ctx.moveTo(moduleX + radius, moduleY);
+                        ctx.lineTo(moduleX + moduleSize - radius, moduleY);
+                        ctx.quadraticCurveTo(moduleX + moduleSize, moduleY, moduleX + moduleSize, moduleY + radius);
+                        ctx.lineTo(moduleX + moduleSize, moduleY + moduleSize - radius);
+                        ctx.quadraticCurveTo(moduleX + moduleSize, moduleY + moduleSize, moduleX + moduleSize - radius, moduleY + moduleSize);
+                        ctx.lineTo(moduleX + radius, moduleY + moduleSize);
+                        ctx.quadraticCurveTo(moduleX, moduleY + moduleSize, moduleX, moduleY + moduleSize - radius);
+                        ctx.lineTo(moduleX, moduleY + radius);
+                        ctx.quadraticCurveTo(moduleX, moduleY, moduleX + radius, moduleY);
                         ctx.closePath();
                         ctx.fill();
                     }
@@ -117,16 +150,26 @@ document.addEventListener('DOMContentLoaded', function() {
         const img = new Image();
         
         img.onload = function() {
-            const logoSize = qrcodeCanvas.width * 0.2; // 20% of QR code size
-            const x = (qrcodeCanvas.width - logoSize) / 2;
-            const y = (qrcodeCanvas.height - logoSize) / 2;
+            const maxLogoSize = qrcodeCanvas.width * 0.2; // 20% of QR code size
             
-            // White background for logo
-            ctx.fillStyle = 'white';
-            ctx.fillRect(x - 5, y - 5, logoSize + 10, logoSize + 10);
+            // Calculate size maintaining aspect ratio
+            let logoWidth = img.width;
+            let logoHeight = img.height;
+            const aspectRatio = logoWidth / logoHeight;
             
-            // Draw logo
-            ctx.drawImage(img, x, y, logoSize, logoSize);
+            if (logoWidth > logoHeight) {
+                logoWidth = maxLogoSize;
+                logoHeight = maxLogoSize / aspectRatio;
+            } else {
+                logoHeight = maxLogoSize;
+                logoWidth = maxLogoSize * aspectRatio;
+            }
+            
+            const x = (qrcodeCanvas.width - logoWidth) / 2;
+            const y = (qrcodeCanvas.height - logoHeight) / 2;
+            
+            // Draw logo with transparency support (no white background)
+            ctx.drawImage(img, x, y, logoWidth, logoHeight);
             
             // Update download link after logo is embedded
             updateDownloadLink();
@@ -157,8 +200,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (logoDataUrl) {
             qr.level = 'H';
             errorCorrectionSelect.value = 'H';
+            errorCorrectionSelect.disabled = true;
+            logoInfo.style.display = 'block';
         } else {
             qr.level = errorCorrection;
+            errorCorrectionSelect.disabled = false;
+            logoInfo.style.display = 'none';
         }
 
         qr.value = content;
@@ -206,6 +253,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 logoDataUrl = event.target.result;
                 logoPreview.innerHTML = `<img src="${logoDataUrl}" alt="Logo preview">`;
                 removeLogoBtn.style.display = 'inline-block';
+                errorCorrectionSelect.disabled = true;
+                errorCorrectionSelect.value = 'H';
+                logoInfo.style.display = 'block';
                 debouncedGenerate();
             };
             reader.readAsDataURL(file);
@@ -218,6 +268,8 @@ document.addEventListener('DOMContentLoaded', function() {
         logoPreview.innerHTML = '';
         logoUploadInput.value = '';
         removeLogoBtn.style.display = 'none';
+        errorCorrectionSelect.disabled = false;
+        logoInfo.style.display = 'none';
         debouncedGenerate();
     });
 
