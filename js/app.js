@@ -5,11 +5,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const downloadLink = document.getElementById('download');
     const foregroundColorInput = document.getElementById('foregroundColor');
     const backgroundColorInput = document.getElementById('backgroundColor');
+    const transparentBackgroundCheckbox = document.getElementById('transparentBackground');
     const moduleStyleSelect = document.getElementById('moduleStyle');
     const logoUploadInput = document.getElementById('logoUpload');
     const logoPreview = document.getElementById('logoPreview');
     const removeLogoBtn = document.getElementById('removeLogo');
     const logoInfo = document.getElementById('logoInfo');
+    const qrcodeContainer = document.getElementById('qrcode-container');
 
     let qr = null;
     let debounceTimer;
@@ -47,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
             size: 512,
             value: 'N/A',
             level: 'M', // default error correction level
-            background: 'white',
+            background: transparentBackgroundCheckbox.checked ? 'transparent' : 'white',
             foreground: 'grey',
             padding: 16 // safety margin
         });
@@ -91,9 +93,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Clear canvas and redraw with new style
         ctx.clearRect(0, 0, qrcodeCanvas.width, qrcodeCanvas.height);
         
-        // Draw background
-        ctx.fillStyle = qr.background;
-        ctx.fillRect(0, 0, qrcodeCanvas.width, qrcodeCanvas.height);
+        // Draw background only if not transparent
+        if (qr.background !== 'transparent') {
+            ctx.fillStyle = qr.background;
+            ctx.fillRect(0, 0, qrcodeCanvas.width, qrcodeCanvas.height);
+        }
         
         // Set foreground color
         ctx.fillStyle = qr.foreground;
@@ -151,6 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         img.onload = function() {
             const maxLogoSize = qrcodeCanvas.width * 0.2; // 20% of QR code size
+            const margin = 8; // Margin around logo in pixels
             
             // Calculate size maintaining aspect ratio
             let logoWidth = img.width;
@@ -168,7 +173,29 @@ document.addEventListener('DOMContentLoaded', function() {
             const x = (qrcodeCanvas.width - logoWidth) / 2;
             const y = (qrcodeCanvas.height - logoHeight) / 2;
             
-            // Draw logo with transparency support (no white background)
+            // Clear background area for logo with margin
+            const clearX = x - margin;
+            const clearY = y - margin;
+            const clearWidth = logoWidth + (margin * 2);
+            const clearHeight = logoHeight + (margin * 2);
+            
+            // Save current composite operation
+            const previousCompositeOperation = ctx.globalCompositeOperation;
+            
+            // Fill cleared area with background color (or transparent if needed)
+            if (qr.background === 'transparent') {
+                // Clear to transparent
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+                ctx.fillRect(clearX, clearY, clearWidth, clearHeight);
+                ctx.globalCompositeOperation = previousCompositeOperation;
+            } else {
+                // Fill with background color
+                ctx.fillStyle = qr.background;
+                ctx.fillRect(clearX, clearY, clearWidth, clearHeight);
+            }
+            
+            // Draw logo
             ctx.drawImage(img, x, y, logoWidth, logoHeight);
             
             // Update download link after logo is embedded
@@ -193,7 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const errorCorrection = errorCorrectionSelect.value;
         const foregroundColor = foregroundColorInput.value;
-        const backgroundColor = backgroundColorInput.value;
+        const backgroundColor = transparentBackgroundCheckbox.checked ? 'transparent' : backgroundColorInput.value;
         const moduleStyle = moduleStyleSelect.value;
 
         // If logo is present, force high error correction
@@ -243,6 +270,19 @@ document.addEventListener('DOMContentLoaded', function() {
     foregroundColorInput.addEventListener('change', debouncedGenerate);
     backgroundColorInput.addEventListener('change', debouncedGenerate);
     moduleStyleSelect.addEventListener('change', debouncedGenerate);
+    
+    // Transparency checkbox handler
+    transparentBackgroundCheckbox.addEventListener('change', function() {
+        backgroundColorInput.disabled = this.checked;
+        if (this.checked) {
+            backgroundColorInput.style.opacity = '0.5';
+            qrcodeContainer.classList.add('transparent-bg');
+        } else {
+            backgroundColorInput.style.opacity = '1';
+            qrcodeContainer.classList.remove('transparent-bg');
+        }
+        debouncedGenerate();
+    });
 
     // Logo upload handling
     logoUploadInput.addEventListener('change', function(e) {
