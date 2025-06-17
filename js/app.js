@@ -3,9 +3,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const errorCorrectionSelect = document.getElementById('errorCorrection');
     const qrcodeCanvas = document.getElementById('qrcode');
     const downloadLink = document.getElementById('download');
+    const foregroundColorInput = document.getElementById('foregroundColor');
+    const backgroundColorInput = document.getElementById('backgroundColor');
+    const moduleStyleSelect = document.getElementById('moduleStyle');
+    const logoUploadInput = document.getElementById('logoUpload');
+    const logoPreview = document.getElementById('logoPreview');
+    const removeLogoBtn = document.getElementById('removeLogo');
 
     let qr = null;
     let debounceTimer;
+    let logoDataUrl = null;
 
     // Helper: generate a filename based on today's date and the QR code content.
     function generateFilename(content) {
@@ -45,6 +52,89 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Apply module style (dots, rounded corners)
+    function applyModuleStyle(style) {
+        if (style === 'square' || !qr.modules) return;
+
+        const ctx = qrcodeCanvas.getContext('2d');
+        const moduleCount = qr.modules.length;
+        const moduleSize = (qrcodeCanvas.width - qr.padding * 2) / moduleCount;
+        const padding = qr.padding;
+
+        // Clear canvas and redraw with new style
+        ctx.clearRect(0, 0, qrcodeCanvas.width, qrcodeCanvas.height);
+        
+        // Draw background
+        ctx.fillStyle = qr.background;
+        ctx.fillRect(0, 0, qrcodeCanvas.width, qrcodeCanvas.height);
+        
+        // Set foreground color
+        ctx.fillStyle = qr.foreground;
+
+        for (let row = 0; row < moduleCount; row++) {
+            for (let col = 0; col < moduleCount; col++) {
+                if (qr.modules[row][col]) {
+                    const x = padding + col * moduleSize;
+                    const y = padding + row * moduleSize;
+
+                    if (style === 'dots') {
+                        // Draw circles
+                        ctx.beginPath();
+                        ctx.arc(
+                            x + moduleSize / 2,
+                            y + moduleSize / 2,
+                            moduleSize * 0.4,
+                            0,
+                            2 * Math.PI
+                        );
+                        ctx.fill();
+                    } else if (style === 'rounded') {
+                        // Draw rounded rectangles
+                        const radius = moduleSize * 0.2;
+                        ctx.beginPath();
+                        ctx.moveTo(x + radius, y);
+                        ctx.lineTo(x + moduleSize - radius, y);
+                        ctx.quadraticCurveTo(x + moduleSize, y, x + moduleSize, y + radius);
+                        ctx.lineTo(x + moduleSize, y + moduleSize - radius);
+                        ctx.quadraticCurveTo(x + moduleSize, y + moduleSize, x + moduleSize - radius, y + moduleSize);
+                        ctx.lineTo(x + radius, y + moduleSize);
+                        ctx.quadraticCurveTo(x, y + moduleSize, x, y + moduleSize - radius);
+                        ctx.lineTo(x, y + radius);
+                        ctx.quadraticCurveTo(x, y, x + radius, y);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
+            }
+        }
+    }
+
+    // Embed logo in QR code
+    function embedLogo() {
+        if (!logoDataUrl) return;
+
+        const ctx = qrcodeCanvas.getContext('2d');
+        const img = new Image();
+        
+        img.onload = function() {
+            const logoSize = qrcodeCanvas.width * 0.2; // 20% of QR code size
+            const x = (qrcodeCanvas.width - logoSize) / 2;
+            const y = (qrcodeCanvas.height - logoSize) / 2;
+            
+            // White background for logo
+            ctx.fillStyle = 'white';
+            ctx.fillRect(x - 5, y - 5, logoSize + 10, logoSize + 10);
+            
+            // Draw logo
+            ctx.drawImage(img, x, y, logoSize, logoSize);
+            
+            // Update download link after logo is embedded
+            updateDownloadLink();
+        };
+        
+        img.src = logoDataUrl;
+    }
+
     // Generate QR code
     function generateQRCode() {
         const content = contentInput.value.trim();
@@ -59,14 +149,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const errorCorrection = errorCorrectionSelect.value;
+        const foregroundColor = foregroundColorInput.value;
+        const backgroundColor = backgroundColorInput.value;
+        const moduleStyle = moduleStyleSelect.value;
 
-        qr.level = errorCorrection;
+        // If logo is present, force high error correction
+        if (logoDataUrl) {
+            qr.level = 'H';
+            errorCorrectionSelect.value = 'H';
+        } else {
+            qr.level = errorCorrection;
+        }
+
         qr.value = content;
-        qr.foreground = 'black';
+        qr.foreground = foregroundColor;
+        qr.background = backgroundColor;
+
+        // Apply module style if not square
+        setTimeout(() => {
+            applyModuleStyle(moduleStyle);
+            // Embed logo after style is applied
+            if (logoDataUrl) {
+                embedLogo();
+            } else {
+                updateDownloadLink();
+            }
+        }, 50);
 
         // Show download link
         downloadLink.style.display = 'inline-block';
-        updateDownloadLink();
     }
 
     // Update download link with current canvas data and dynamic filename
@@ -82,6 +193,33 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event listeners
     contentInput.addEventListener('input', debouncedGenerate);
     errorCorrectionSelect.addEventListener('change', debouncedGenerate);
+    foregroundColorInput.addEventListener('change', debouncedGenerate);
+    backgroundColorInput.addEventListener('change', debouncedGenerate);
+    moduleStyleSelect.addEventListener('change', debouncedGenerate);
+
+    // Logo upload handling
+    logoUploadInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                logoDataUrl = event.target.result;
+                logoPreview.innerHTML = `<img src="${logoDataUrl}" alt="Logo preview">`;
+                removeLogoBtn.style.display = 'inline-block';
+                debouncedGenerate();
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Remove logo
+    removeLogoBtn.addEventListener('click', function() {
+        logoDataUrl = null;
+        logoPreview.innerHTML = '';
+        logoUploadInput.value = '';
+        removeLogoBtn.style.display = 'none';
+        debouncedGenerate();
+    });
 
     // Initialize
     initQRCode();

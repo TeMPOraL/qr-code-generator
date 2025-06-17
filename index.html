@@ -24,6 +24,36 @@
                         <option value="Q">Kwartyl (25%)</option>
                         <option value="H">Wysoki (30%)</option>
                     </select>
+
+                    <div class="color-section">
+                        <label>Kolory:</label>
+                        <div class="color-inputs">
+                            <div class="color-input-group">
+                                <label for="foregroundColor">Kolor QR:</label>
+                                <input type="color" id="foregroundColor" value="#000000">
+                            </div>
+                            <div class="color-input-group">
+                                <label for="backgroundColor">Tło:</label>
+                                <input type="color" id="backgroundColor" value="#FFFFFF">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="style-section">
+                        <label for="moduleStyle">Styl modułów:</label>
+                        <select id="moduleStyle">
+                            <option value="square" selected>Kwadratowe</option>
+                            <option value="dots">Kropki</option>
+                            <option value="rounded">Zaokrąglone</option>
+                        </select>
+                    </div>
+
+                    <div class="logo-section">
+                        <label for="logoUpload">Logo (opcjonalne):</label>
+                        <input type="file" id="logoUpload" accept="image/*">
+                        <div id="logoPreview" class="logo-preview"></div>
+                        <button type="button" id="removeLogo" class="remove-logo-btn" style="display: none;">Usuń logo</button>
+                    </div>
                 </div>
             </details>
         </div>
